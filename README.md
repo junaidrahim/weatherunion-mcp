@@ -21,7 +21,7 @@ A Model Context Protocol (MCP) server that provides weather data and air quality
 ## Installation
 
 ### Prerequisites
-- Python 3.8+
+- Python 3.11+
 - Weather Union API key (X-Zomato-Api-Key)
 
 ### Setup
@@ -138,8 +138,8 @@ Add to your Claude Desktop configuration:
 {
   "mcpServers": {
     "weather-union": {
-      "command": "python",
-      "args": ["/path/to/weatherunion-mcp/weatherunion_mcp/server.py"],
+      "command": "uvx",
+      "args": ["weatherunion-mcp"],
       "env": {
         "WEATHER_UNION_API_KEY": "your-api-key-here"
       }
@@ -227,7 +227,3 @@ Contributions are welcome! Please feel free to submit issues, feature requests, 
 ## License
 
 This project is open source. See the LICENSE file for details.
-
-```json
-
-```
