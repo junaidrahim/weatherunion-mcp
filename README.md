@@ -1,58 +1,83 @@
 # Weather Union MCP Server
 
-A Model Context Protocol (MCP) server that provides weather data using the Weather Union API.
+A Model Context Protocol (MCP) server that provides weather data and air quality information using the Weather Union API. This server offers real-time weather data for specific coordinates or predefined Indian cities.
 
 ## Quick Start
 
-Run the server directly with uvx (recommended):
+1. **Set up your API key:**
+   ```bash
+   export WEATHER_UNION_API_KEY='your-api-key-here'
+   ```
 
-```bash
-uvx weatherunion-mcp --api-key YOUR_API_KEY
-```
-
-Replace `YOUR_API_KEY` with your actual Weather Union API key (X-Zomato-Api-Key).
+2. **Run the server:**
+   ```bash
+   # For MCP clients (default - uses stdin)
+   python weatherunion_mcp/server.py
+   
+   # For testing with HTTP
+   python weatherunion_mcp/server.py --http --port 8000
+   ```
 
 ## Installation
 
-### Option 1: Direct execution with uvx (Recommended)
-```bash
-uvx weatherunion-mcp --api-key YOUR_API_KEY
-```
+### Prerequisites
+- Python 3.8+
+- Weather Union API key (X-Zomato-Api-Key)
 
-### Option 2: Install and run
-```bash
-pip install -e .
-weatherunion-mcp --api-key YOUR_API_KEY
-```
+### Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd weatherunion-mcp
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   pip install fastmcp requests python-dotenv
+   ```
+
+3. **Configure your API key:**
+   
+   **Option 1: Environment Variable**
+   ```bash
+   export WEATHER_UNION_API_KEY='your-api-key-here'
+   ```
+   
+   **Option 2: .env File**
+   ```bash
+   echo "WEATHER_UNION_API_KEY=your-api-key-here" > .env
+   ```
+
+4. **Run the server:**
+   ```bash
+   python weatherunion_mcp/server.py
+   ```
 
 ## Available Tools
 
-The MCP server provides the following tools:
+The MCP server provides two powerful weather tools:
 
 ### 1. `get_current_weather`
-Get formatted weather data for specific coordinates.
+Get current weather data for any geographic location using latitude and longitude coordinates.
 
 **Parameters:**
-- `latitude` (float): Latitude coordinate
-- `longitude` (float): Longitude coordinate
+- `latitude` (float): Latitude coordinate (-90 to 90 degrees)
+- `longitude` (float): Longitude coordinate (-180 to 180 degrees)
+
+**Returns:**
+Comprehensive weather information including temperature, humidity, wind conditions, precipitation, and air quality data.
 
 **Example:**
 ```
 get_current_weather(12.933756, 77.625825)  # Bangalore coordinates
 ```
 
-### 2. `get_weather_raw`
-Get raw weather data as returned by the Weather Union API.
+### 2. `get_weather_for_city`
+Get weather data for major Indian cities using predefined city names.
 
 **Parameters:**
-- `latitude` (float): Latitude coordinate  
-- `longitude` (float): Longitude coordinate
-
-### 3. `get_weather_for_city`
-Get weather data for predefined major Indian cities.
-
-**Parameters:**
-- `city_name` (str): Name of the city
+- `city_name` (str): Name of the city (case-insensitive)
 - `country_code` (str, optional): Country code (default: "IN")
 
 **Supported Cities:**
@@ -62,35 +87,79 @@ Get weather data for predefined major Indian cities.
 **Example:**
 ```
 get_weather_for_city("bangalore")
+get_weather_for_city("Mumbai")
 ```
 
-## API Key
+## Weather Data Format
 
-You need a Weather Union API key to use this server. This is the same as the X-Zomato-Api-Key.
+The server returns comprehensive weather information in a formatted string:
 
-The server will validate your API key on startup by making a test request.
+```
+Weather Information (Lat: 12.933756, Lon: 77.625825):
+
+Temperature: 25.68°C
+Humidity: 25.81%
+Wind Speed: 1.15 km/h
+Wind Direction: 331.2°
+Rain Intensity: 0 mm/h
+Rain Accumulation: 0.4 mm
+Air Quality Index (PM 2.5): 84
+Air Quality Index (PM 10): 75
+```
+
+## Transport Options
+
+### Default: Standard Input (stdin)
+Perfect for MCP clients like Claude Desktop:
+```bash
+python weatherunion_mcp/server.py
+```
+
+### HTTP Transport
+For testing and development:
+```bash
+python weatherunion_mcp/server.py --http --port 8000
+```
+
+## Configuration
+
+### Environment Variables
+- `WEATHER_UNION_API_KEY`: Your Weather Union API key (required)
+
+### Command Line Options
+- `--http`: Use HTTP transport instead of stdin
+- `--port`: Port for HTTP server (default: 8000, only used with --http)
 
 ## Usage with MCP Clients
 
-Once the server is running, MCP clients (like Claude Desktop, Cline, etc.) can connect to it and use the weather tools.
-
-Example weather data format:
+### Claude Desktop
+Add to your Claude Desktop configuration:
+```json
+{
+  "mcpServers": {
+    "weather-union": {
+      "command": "python",
+      "args": ["/path/to/weatherunion-mcp/weatherunion_mcp/server.py"],
+      "env": {
+        "WEATHER_UNION_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
 ```
-Weather Information for HSR Layout:
 
-Temperature: 25.2°C
-Humidity: 68%
-Wind Speed: 12.5 km/h
-Wind Direction: 230°
-Rain Intensity: 0.0 mm/h
-Rain Accumulation: 0.0 mm
+### Other MCP Clients
+The server follows standard MCP protocol and works with any compliant MCP client.
 
-Last Updated: 2024-01-15T14:30:00Z
-```
+## API Key
+
+You need a Weather Union API key (X-Zomato-Api-Key) to use this server. 
+
+- The server validates your API key on startup
+- API key must be set as an environment variable
+- The server will show clear error messages if the API key is missing or invalid
 
 ## Development
-
-The server is built using [FastMCP](https://github.com/jlowin/fastmcp), which provides a simple way to create MCP servers in Python.
 
 ### Project Structure
 ```
@@ -98,23 +167,62 @@ weatherunion-mcp/
 ├── weatherunion_mcp/
 │   ├── __init__.py
 │   └── server.py          # Main MCP server implementation
-├── pyproject.toml         # Project configuration
-└── README.md
+├── .env                   # API key configuration (optional)
+├── README.md
+└── requirements.txt       # Python dependencies
 ```
+
+### Dependencies
+- `fastmcp >= 0.2.0`: MCP server framework
+- `requests >= 2.31.0`: HTTP client for API calls
+- `python-dotenv`: Environment variable loading
 
 ### Testing
-You can test the server by running it and checking the validation:
-```bash
-uvx weatherunion-mcp --api-key YOUR_API_KEY
-```
+1. **Validate setup:**
+   ```bash
+   python weatherunion_mcp/server.py
+   ```
+   
+2. **Test with HTTP (for debugging):**
+   ```bash
+   python weatherunion_mcp/server.py --http --port 8000
+   ```
 
-The server will validate your API key on startup and show available tools.
+The server will:
+- Load your API key from environment/`.env` file
+- Validate the API key with a test request
+- Show available tools and configuration
+- Start the appropriate transport
+
+### Error Handling
+The server provides clear error messages for:
+- Missing API key
+- Invalid API key
+- Network connection issues
+- Invalid coordinates
+- Unsupported cities
+
+## Features
+
+- ✅ **Real-time weather data** from Weather Union API
+- ✅ **Air quality information** (PM 2.5 and PM 10)
+- ✅ **Coordinate-based queries** for any location
+- ✅ **Predefined major Indian cities**
+- ✅ **MCP protocol compliance** for AI assistant integration
+- ✅ **Environment variable configuration**
+- ✅ **Multiple transport options** (stdin/HTTP)
+- ✅ **Comprehensive error handling**
+- ✅ **API key validation**
 
 ## Requirements
 
-- Python 3.13+
-- fastmcp >= 0.2.0
-- requests >= 2.31.0
+- Python 3.8+
+- Weather Union API key
+- Internet connection for API calls
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
 
 ## License
 
