@@ -1,1 +1,0 @@
-"""Weather Union MCP Server package."""
